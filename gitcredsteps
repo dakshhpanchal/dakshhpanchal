@@ -1,0 +1,12 @@
+create pat classic
+tick everything
+git config --global user.name "dakshhpanchal"
+git config --global user.email "dakshpanchal08@gmail.com"
+git config --global credential.helper store
+cd ~/myproject
+git clone https://github.com/yourusername/yourrepo.git
+cd yourrepo
+git push
+Username for 'https://github.com': dakshhpanchal
+Password for 'https://dakshhpanchal@github.com': <paste your GitHub Personal Access Token>
+
