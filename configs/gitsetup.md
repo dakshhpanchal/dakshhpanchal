@@ -1,39 +1,102 @@
-# Git Multi-Account Setup using PAT (HTTPS)
+# Git Multi-Account Setup (HTTPS + PAT)
+
+This guide explains how to use **two different GitHub accounts on the same Linux machine** using HTTPS and Personal Access Tokens (PAT), with complete isolation.
 
 ---
 
-## A. Personal Account Setup
+## Overview
 
-### 1. Create PAT (Classic)
+* Personal account → uses global credential storage
+* UGV account → uses separate credential file
+* No conflicts between accounts
 
-* Go to: Settings → Developer settings → Personal access tokens → Tokens (classic)
+---
+
+## Prerequisites
+
+* Two GitHub accounts
+* PAT (Personal Access Token) for each account
+
+---
+
+## Step 1: Generate PAT (for both accounts)
+
+On GitHub:
+
+* Settings → Developer settings → Personal access tokens → Tokens (classic)
 * Generate new token
-* Select scopes: `repo` (or all if needed)
-* Copy the token
+* Select `repo` scope (or all if needed)
+* Copy token
 
 ---
 
-### 2. Configure Git (Global)
+## Step 2: Clean existing credentials (important)
 
 ```bash
-git config --global user.name "dakshhpanchal"
-git config --global user.email "dakshpanchal08@gmail.com"
+rm ~/.git-credentials
+rm ~/.git-credentials-ugv
+```
+
+---
+
+## Step 3: Disable global helper temporarily (critical)
+
+```bash
+git config --global --unset credential.helper
+```
+
+This prevents Git from reusing or writing credentials to the wrong file during setup.
+
+---
+
+## Step 4: Setup UGV account FIRST (important order)
+
+```bash
+cd ~/ugv/mercury
+```
+
+Set repo-specific credential file:
+
+```bash
+git config credential.helper "store --file ~/.git-credentials-ugv"
+```
+
+Push to authenticate:
+
+```bash
+GIT_TERMINAL_PROMPT=1 git push
+```
+
+Enter:
+
+```
+Username: ugv-dtu
+Password: <UGV PAT>
+```
+
+Verify:
+
+```bash
+cat ~/.git-credentials-ugv
+```
+
+---
+
+## Step 4: Enable global helper for personal account
+
+```bash
 git config --global credential.helper store
 ```
 
 ---
 
-### 3. Clone Repository
+## Step 5: Setup personal account
 
 ```bash
-cd ~/myproject
-git clone https://github.com/yourusername/yourrepo.git
-cd yourrepo
+cd ~/probes/dakshhpanchal
 ```
 
----
-
-### 4. Push (Authenticate using PAT)
+Push:
 
 ```bash
 git push
@@ -43,84 +106,102 @@ Enter:
 
 ```
 Username: dakshhpanchal
-Password: <paste your GitHub Personal Access Token>
+Password: <PERSONAL PAT>
 ```
 
----
-
-## B. UGV / Second Account Setup
-
-### 1. Create PAT (Classic)
-
-* Same steps as above
-* Use second account
-* Copy the token
-
----
-
-### 2. Clone Repository (with username in URL)
+Verify:
 
 ```bash
-cd ~/ugv
-git clone https://ugv-dtu@github.com/ugv-dtu/mercury.git
-cd mercury
+cat ~/.git-credentials
 ```
 
 ---
 
-### 3. Configure Repo Identity
+## Final Structure
+
+### Personal
+
+```
+~/.git-credentials
+→ dakshhpanchal
+```
+
+### UGV
+
+```
+~/.git-credentials-ugv
+→ ugv-dtu
+```
+
+---
+
+## Required Remote URL Format
+
+### Personal repos
+
+```
+https://github.com/username/repo.git
+```
+
+### UGV repos (must include username)
+
+```
+https://ugv-dtu@github.com/ugv-dtu/repo.git
+```
+
+---
+
+## Key Rules
+
+* Always setup UGV account first when resetting
+* Do not mix credential helpers between repos
+* Do not use password, always use PAT
+* Do not clone UGV repos without username in URL
+
+---
+
+## Debug Commands
+
+Check active credential helper:
 
 ```bash
-git config user.name "ugv"
-git config user.email "ugv@dtu.ac.in"
+git config --show-origin credential.helper
 ```
 
----
-
-### 4. Use Separate Credential File
+Check remotes:
 
 ```bash
-git config credential.helper "store --file ~/.git-credentials-ugv"
+git remote -v
 ```
 
----
-
-### 5. Push (Authenticate using PAT)
+Check stored credentials:
 
 ```bash
-git push
-```
-
-Enter:
-
-```
-Username: ugv-dtu
-Password: <paste your GitHub Personal Access Token>
+cat ~/.git-credentials
+cat ~/.git-credentials-ugv
 ```
 
 ---
 
-## Final Setup Summary
+## Common Issues
 
-* Personal account → `~/.git-credentials`
-* UGV account → `~/.git-credentials-ugv`
-* Accounts are isolated
-* No credential conflicts
+### Wrong account used
+
+* Credentials mixed in same file
+* Fix: delete credential files and redo setup
+
+### Authentication error
+
+* Using password instead of PAT
+
+### Permission denied
+
+* Account does not have access to repo
 
 ---
 
-## Important Rules
+## Result
 
-* Personal repos:
-
-```
-https://github.com/...
-```
-
-* UGV repos (must include username):
-
-```
-https://ugv-dtu@github.com/...
-```
-
-* Always use PAT instead of password
+* Two GitHub accounts working on same system
+* Fully isolated credentials
+* No conflicts during push/pull
